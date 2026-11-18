@@ -1,3 +1,22 @@
+# 无线设备电量监视器 · 简体中文定制版
+
+本仓库是 [Wireless Battery 原项目](https://github.com/krisgfx9/Wireless-Device-Battery-Monitor) 的 Fork，由 **LetterG825** 维护基于官方 **v1.0.7** 的非官方简体中文定制版。在 Windows 10/11 任务栏或系统托盘中，查看受支持的无线鼠标、耳机、键盘和手柄电量。
+
+**[下载中文版便携包](https://github.com/LetterG825/Wireless-Device-Battery-Monitor/releases/download/zh-cn-v1.0.7-1/WirelessBattery-1.0.7-zh-CN-portable.zip)** · **[发布说明与完整源码](https://github.com/LetterG825/Wireless-Device-Battery-Monitor/releases/tag/zh-cn-v1.0.7-1)** · **[中文使用与编译说明](https://github.com/LetterG825/Wireless-Device-Battery-Monitor/blob/zh-cn/README.zh-CN.md)**
+
+## 中文版概述
+
+- **界面汉化**：菜单、悬停提示、电量状态、低电量通知、连接方式及设备支持申请窗口均已汉化。
+- **保留原有功能**：支持任务栏/托盘显示、手动刷新、隐藏设备、调整显示顺序和开机自启；设备检测能力继承官方 v1.0.7。
+- **便携使用**：下载后完整解压，运行 `WirelessBattery.exe`；请保留同目录的 `headsetcontrol.exe`。已有版本运行时，先从菜单退出。
+- **开源可修改**：保留原作者署名及 GPL-3.0 许可证，提供完整源码、MSVC 编译脚本和文件校验值。
+
+> **版本说明**：当前中文定制版本为 **1.0.7-zh-CN.1**，源码位于 [`zh-cn` 分支](https://github.com/LetterG825/Wireless-Device-Battery-Monitor/tree/zh-cn)。`main` 分支代码来自上游；原项目当前已加入中文与多语言支持，本定制版用于保存基于 v1.0.7 的独立中文构建。品牌型号和用于原作者排查问题的技术信息保留原文。尚未针对所有支持设备进行实机验证。
+
+---
+
+以下保留原项目英文说明与作者信息。
+
 # Wireless Battery
 
 [![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/krisgfx)
