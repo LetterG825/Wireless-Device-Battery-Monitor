@@ -6,3 +6,9 @@ dist/
 third_party/
 .claude/
 CLAUDE.md
+
+# Local MSVC build artifacts
+build-zh/
+*.obj
+*.pdb
+*.ilk

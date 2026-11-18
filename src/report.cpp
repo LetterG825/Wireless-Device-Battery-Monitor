@@ -111,7 +111,7 @@ std::vector<UsbDevice> EnumUsb() {
         d.vid = vid;
         d.pid = pid;
         std::wstring cls = RegProp(di, dd, SPDRP_CLASS), svc = RegProp(di, dd, SPDRP_SERVICE);
-        std::wstring label = (cls.empty() ? L"unknown" : cls) + (svc.empty() ? L"" : L" (" + svc + L")");
+        std::wstring label = (cls.empty() ? L"未知" : cls) + (svc.empty() ? L"" : L" (" + svc + L")");
         bool isInterface = Upper(idBuf).find(L"&MI_") != std::wstring::npos;
         if (!isInterface) {
             if (d.name.empty()) d.name = DeviceName(di, dd);
@@ -217,7 +217,7 @@ std::vector<Candidate> BuildCandidates() {
     }
     std::vector<Candidate> out;
     for (auto& [k, d] : m) {
-        if (d.name.empty()) d.name = L"Unknown device";
+        if (d.name.empty()) d.name = L"未知设备";
         out.push_back(d);
     }
     // Devices with a vendor-defined collection or audio first: that is where battery protocols live.
@@ -365,18 +365,18 @@ std::wstring SendRequest(Request req) {
         reply.clear();
         status = Post(RequestJson(req), reply);
     }
-    if (status == 201) return std::wstring(L"Thank you! Your request was sent. You can follow it at ") + kRequestedPage + L".";
+    if (status == 201) return std::wstring(L"感谢！申请已发送，可在此查看进度：") + kRequestedPage + L".";
     if (status == 200)
         return reply.find("\"repeat\":true") != std::string::npos
-                   ? L"You already sent this device in the last 24 hours, so it's on the list. Thank you!"
-                   : std::wstring(L"Thank you! Your request was sent. You can follow it at ") + kRequestedPage + L".";
+                   ? L"你在过去 24 小时内已提交过此设备，申请已在列表中。谢谢！"
+                   : std::wstring(L"感谢！申请已发送，可在此查看进度：") + kRequestedPage + L".";
     if (status == 400) {
         std::wstring e = JsonError(reply);
-        return L"The request was not accepted: " + (e.empty() ? std::wstring(L"please check the fields.") : e);
+        return L"申请未被接受：" + (e.empty() ? std::wstring(L"请检查填写内容。") : e);
     }
-    if (status == 429) return L"Too many requests from your network. Please try again in an hour.";
-    if (status == 0) return L"Couldn't reach krisgfx.com. Check your connection, or use \"Copy full report\" and post it on GitHub.";
-    return L"The site answered with an error (" + std::to_wstring(status) + L"). Please try again later.";
+    if (status == 429) return L"当前网络的请求过多，请一小时后重试。";
+    if (status == 0) return L"无法连接 krisgfx.com。请检查网络，或点击“复制完整报告”后发布到 GitHub。";
+    return L"网站返回错误（" + std::to_wstring(status) + L"），请稍后重试。";
 }
 
 // ---- window ---------------------------------------------------------------------------------------
@@ -384,6 +384,7 @@ std::wstring SendRequest(Request req) {
 enum : int { IDC_DEVICE = 101, IDC_MODEL, IDC_TYPE, IDC_NAME, IDC_NOTES, IDC_PREVIEW, IDC_COPY, IDC_SEND, IDC_STATUS };
 constexpr UINT WM_CANDIDATES = WM_APP + 20, WM_SENT = WM_APP + 21, WM_FULLREPORT = WM_APP + 22;
 const wchar_t* const kTypes[] = { L"mouse", L"keyboard", L"headset", L"controller", L"other" };
+const wchar_t* const kTypeLabels[] = { L"鼠标", L"键盘", L"耳机", L"手柄", L"其他" };
 const wchar_t kClass[] = L"WirelessBatteryReport";
 
 HWND g_wnd;
@@ -423,8 +424,8 @@ Request CurrentRequest() {
 
 void UpdatePreview() {
     Request r = CurrentRequest();
-    std::wstring p = L"Device: " + (r.model.empty() ? L"(type the device name)" : r.model) + L"\r\nType: " + r.type +
-                     L"\r\nYour name: " + (r.name.empty() ? L"(not sent)" : r.name + L" (kept private)") + L"\r\nNotes: ";
+    std::wstring p = L"设备：" + (r.model.empty() ? L"（请填写设备名称）" : r.model) + L"\r\n类型：" + r.type +
+                     L"\r\n你的称呼：" + (r.name.empty() ? L"（未填写）" : r.name + L"（保密）") + L"\r\n备注：";
     for (wchar_t ch : r.notes) p += ch == L'\n' ? std::wstring(L"\r\n") : std::wstring(1, ch);
     SetDlgItemTextW(g_wnd, IDC_PREVIEW, p.c_str());
     EnableWindow(GetDlgItem(g_wnd, IDC_SEND), !g_sending && DeviceChosen() && r.model.size() >= 2);
@@ -451,9 +452,9 @@ void FillDevices() {
         swprintf(ids, 16, L"%04X:%04X", c.vid, c.pid);
         SendMessageW(cb, CB_ADDSTRING, 0, (LPARAM)(c.name + L"  (" + ids + L")").c_str());
     }
-    SendMessageW(cb, CB_ADDSTRING, 0, (LPARAM)L"My device is not in this list");
+    SendMessageW(cb, CB_ADDSTRING, 0, (LPARAM)L"我的设备不在列表中");
     EnableWindow(cb, TRUE);
-    SetStatus(L"Pick the device that isn't shown. Devices with a vendor-specific interface are listed first.");
+    SetStatus(L"请选择未显示电量的设备。具有厂商专用接口的设备排在前面。");
     UpdatePreview();
 }
 
@@ -477,34 +478,34 @@ void CreateControls() {
     MakeFont();
     const int L = 16, W = 428;
     Add(L"STATIC",
-        L"Is one of your devices not shown? Pick it below and send it to us. It goes on the public request list at "
-        L"krisgfx.com/tools, and we'll look into supporting it.",
+        L"设备未显示电量？请在下方选择并提交，申请会公开列于 "
+        L"krisgfx.com/tools，原项目作者将评估适配。",
         0, -1, L, 12, W, 40);
-    Add(L"STATIC", L"Device", 0, -1, L, 58, W, 18);
+    Add(L"STATIC", L"设备", 0, -1, L, 58, W, 18);
     HWND dev = Add(WC_COMBOBOXW, L"", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, IDC_DEVICE, L, 76, W, 300);
-    SendMessageW(dev, CB_ADDSTRING, 0, (LPARAM)L"Scanning devices...");
+    SendMessageW(dev, CB_ADDSTRING, 0, (LPARAM)L"正在扫描设备…");
     SendMessageW(dev, CB_SETCURSEL, 0, 0);
     EnableWindow(dev, FALSE);
-    Add(L"STATIC", L"Device name (as it's sold)", 0, -1, L, 108, W, 18);
+    Add(L"STATIC", L"设备名称（商品型号）", 0, -1, L, 108, W, 18);
     HWND model = Add(WC_EDITW, L"", ES_AUTOHSCROLL | WS_TABSTOP, IDC_MODEL, L, 126, W, 24, WS_EX_CLIENTEDGE);
     SendMessageW(model, EM_LIMITTEXT, 80, 0);
-    Add(L"STATIC", L"Type", 0, -1, L, 158, W, 18);
+    Add(L"STATIC", L"类型", 0, -1, L, 158, W, 18);
     HWND type = Add(WC_COMBOBOXW, L"", CBS_DROPDOWNLIST | WS_TABSTOP, IDC_TYPE, L, 176, 200, 200);
-    for (auto t : kTypes) SendMessageW(type, CB_ADDSTRING, 0, (LPARAM)t);
+    for (auto t : kTypeLabels) SendMessageW(type, CB_ADDSTRING, 0, (LPARAM)t);
     SendMessageW(type, CB_SETCURSEL, 4, 0);
-    Add(L"STATIC", L"Your name (optional, kept private and never shown)", 0, -1, L, 208, W, 18);
+    Add(L"STATIC", L"你的称呼（选填，保密，不公开）", 0, -1, L, 208, W, 18);
     HWND name = Add(WC_EDITW, L"", ES_AUTOHSCROLL | WS_TABSTOP, IDC_NAME, L, 226, W, 24, WS_EX_CLIENTEDGE);
     SendMessageW(name, EM_LIMITTEXT, 40, 0);
-    Add(L"STATIC", L"Anything else we should know? (optional)", 0, -1, L, 258, W, 18);
+    Add(L"STATIC", L"其他补充信息（选填）", 0, -1, L, 258, W, 18);
     HWND notes = Add(WC_EDITW, L"", ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL | WS_TABSTOP, IDC_NOTES, L, 276, W, 54,
                      WS_EX_CLIENTEDGE);
     SendMessageW(notes, EM_LIMITTEXT, 200, 0);
-    Add(L"STATIC", L"This is exactly what will be sent:", 0, -1, L, 338, W, 18);
+    Add(L"STATIC", L"将发送以下内容（类型及技术信息保留原文）：", 0, -1, L, 338, W, 18);
     Add(WC_EDITW, L"", ES_MULTILINE | ES_READONLY | WS_VSCROLL | WS_TABSTOP, IDC_PREVIEW, L, 356, W, 110, WS_EX_CLIENTEDGE);
-    Add(L"STATIC", L"Scanning your devices...", 0, IDC_STATUS, L, 474, W, 36);
-    Add(WC_BUTTONW, L"Copy full report", WS_TABSTOP, IDC_COPY, L, 516, 140, 28);
-    Add(WC_BUTTONW, L"Send", BS_DEFPUSHBUTTON | WS_TABSTOP, IDC_SEND, L + W - 186, 516, 90, 28);
-    Add(WC_BUTTONW, L"Close", WS_TABSTOP, IDCANCEL, L + W - 90, 516, 90, 28);
+    Add(L"STATIC", L"正在扫描你的设备…", 0, IDC_STATUS, L, 474, W, 36);
+    Add(WC_BUTTONW, L"复制完整报告", WS_TABSTOP, IDC_COPY, L, 516, 140, 28);
+    Add(WC_BUTTONW, L"发送", BS_DEFPUSHBUTTON | WS_TABSTOP, IDC_SEND, L + W - 186, 516, 90, 28);
+    Add(WC_BUTTONW, L"关闭", WS_TABSTOP, IDCANCEL, L + W - 90, 516, 90, 28);
     EnableWindow(GetDlgItem(g_wnd, IDC_SEND), FALSE);
 }
 
@@ -584,7 +585,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
             std::unique_ptr<std::wstring> s((std::wstring*)lp);
             CopyToClipboard(*s);
             EnableWindow(GetDlgItem(h, IDC_COPY), TRUE);
-            SetStatus(L"The full report is copied. Paste it into a GitHub issue if we ask for more details.");
+            SetStatus(L"已复制完整报告。需要补充信息时，可粘贴到 GitHub 议题中。");
             return 0;
         }
         case WM_COMMAND: {
@@ -596,13 +597,13 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
             if ((id == IDC_SEND || id == IDOK) && IsWindowEnabled(GetDlgItem(h, IDC_SEND))) {
                 g_sending = true;
                 EnableWindow(GetDlgItem(h, IDC_SEND), FALSE);
-                SetStatus(L"Sending...");
+                SetStatus(L"正在发送…");
                 StartThread(SendThread, new SendJob{ h, CurrentRequest() });
                 return 0;
             }
             if (id == IDC_COPY) {
                 EnableWindow(GetDlgItem(h, IDC_COPY), FALSE);
-                SetStatus(L"Collecting the full report (this takes about 10 seconds)...");
+                SetStatus(L"正在收集完整报告（约需 10 秒）…");
                 const Candidate* c = Selected();
                 std::wstring header = L"Wireless Battery device report\nWindows build " + WindowsBuild() + L"\n";
                 if (c) {
@@ -669,7 +670,7 @@ void Show(HINSTANCE inst, HWND owner) {
     GetMonitorInfoW(mon, &mi);
     int w = rc.right - rc.left, hgt = rc.bottom - rc.top;
     int x = mi.rcWork.left + (mi.rcWork.right - mi.rcWork.left - w) / 2, y = mi.rcWork.top + (mi.rcWork.bottom - mi.rcWork.top - hgt) / 2;
-    HWND h = CreateWindowExW(0, kClass, L"Wireless Battery: request support for a device", style, x, y, w, hgt, nullptr, nullptr, inst,
+    HWND h = CreateWindowExW(0, kClass, L"无线设备电量监视器：申请适配设备", style, x, y, w, hgt, nullptr, nullptr, inst,
                              nullptr);
     g_quitOnClose = owner == nullptr;
     if (!h) return;

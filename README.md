@@ -1,3 +1,13 @@
+# 无线设备电量监视器 · 简体中文定制版
+
+**非官方版本 · 基于官方 v1.0.7 · 中文构建版本 1.0.7-zh-CN.1**
+
+[中文使用与编译说明](README.zh-CN.md) · [下载中文版](https://github.com/LetterG825/Wireless-Device-Battery-Monitor/releases) · [原项目](https://github.com/krisgfx9/Wireless-Device-Battery-Monitor)
+
+本分支保存 v1.0.7 的简体中文定制构建。原项目当前主分支已提供中文与多语言支持，请按需选择。原作者信息与 GPL-3.0 许可均保留；以下为原项目说明。
+
+---
+
 # Wireless Battery
 
 [![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/krisgfx)
